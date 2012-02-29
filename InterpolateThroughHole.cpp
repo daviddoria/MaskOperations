@@ -7,9 +7,9 @@
 
 int main(int argc, char*argv[])
 {
-  if(argc != 8)
+  if(argc != 9)
     {
-    std::cerr << "Required arguments: image mask p0x p0y p1x p1y output" << std::endl;
+    std::cerr << "Required arguments: image mask p0x p0y p1x p1y outputImage outputMask" << std::endl;
     return EXIT_FAILURE;
     }
 
@@ -22,16 +22,18 @@ int main(int argc, char*argv[])
   itk::Index<2> p1;
   ssPoints >> p0[0] >> p0[1] >> p1[0] >> p1[1];
 
-  std::string outputFilename = argv[7];
+  std::string outputImageFileName = argv[7];
+  std::string outputMaskFileName = argv[8];
 
   std::cout << "Reading image: " << imageFilename << std::endl;
   std::cout << "Reading mask: " << maskFilename << std::endl;
   std::cout << "P0: " << p0 << std::endl;
   std::cout << "P1: " << p1 << std::endl;
-  std::cout << "Output: " << outputFilename << std::endl;
+  std::cout << "Output image: " << outputImageFileName << std::endl;
+  std::cout << "Output mask: " << outputMaskFileName << std::endl;
 
-  //typedef itk::Image<float, 2> ImageType;
-  typedef itk::Image<unsigned char, 2> ImageType;
+  typedef itk::Image<float, 2> ImageType;
+  //typedef itk::Image<unsigned char, 2> ImageType;
 
   typedef itk::ImageFileReader<ImageType> ImageReaderType;
   ImageReaderType::Pointer imageReader = ImageReaderType::New();
@@ -43,7 +45,8 @@ int main(int argc, char*argv[])
 
   MaskOperations::InteroplateThroughHole(imageReader->GetOutput(), mask.GetPointer(), p0, p1);
 
-  OutputHelpers::WriteImage(imageReader->GetOutput(), outputFilename);
+  OutputHelpers::WriteImage(imageReader->GetOutput(), outputImageFileName);
+  OutputHelpers::WriteImage(mask.GetPointer(), outputMaskFileName);
 
   return EXIT_SUCCESS;
 }

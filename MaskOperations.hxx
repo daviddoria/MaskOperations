@@ -172,8 +172,9 @@ void AddNoiseInHole(TImage* const image, const Mask* const mask, const float noi
 }
 
 template<typename TImage>
-void InteroplateThroughHole(TImage* const image, const Mask* const mask, const itk::Index<2>& p0, const itk::Index<2>& p1)
+void InteroplateThroughHole(TImage* const image, Mask* const mask, const itk::Index<2>& p0, const itk::Index<2>& p1)
 {
+  // This function sets the pixels on the line in the mask to valid and sets the corresponding pixels in the image to the interpolated values.
   if(mask->IsHole(p0) || mask->IsHole(p1))
   {
     throw std::runtime_error("Both p0 and p1 must be valid (not holes)!");
@@ -199,6 +200,10 @@ void InteroplateThroughHole(TImage* const image, const Mask* const mask, const i
       value0 = image->GetPixel(pixels[pixelId-1]);
       break;
       }
+    else
+      {
+      //std::cout << "Skipping pixel " << pixels[pixelId] << " while looking for beginning of hole." << std::endl;
+      }
     }
 
   typename TImage::PixelType value1;
@@ -207,11 +212,15 @@ void InteroplateThroughHole(TImage* const image, const Mask* const mask, const i
   for(; pixelId < pixels.size(); ++pixelId)
     {
     // std::cout << "pixel " << i << " " << pixels[i] << std::endl;
-    if(mask->IsValid(pixels[pixelId]))
+    if(mask->IsValid(pixels[pixelId])) // We found a pixel on the other side of the hole.
       {
-      value1 = image->GetPixel(pixels[pixelId+1]);
-      lastHolePixelIndex = pixelId;
+      value1 = image->GetPixel(pixels[pixelId]);
+      lastHolePixelIndex = pixelId - 1; // The previous pixel is the last one in the hole.
       break;
+      }
+    else
+      {
+      //std::cout << "Skipping pixel " << pixels[pixelId] << " while looking for end of hole." << std::endl;
       }
     }
 
@@ -220,12 +229,13 @@ void InteroplateThroughHole(TImage* const image, const Mask* const mask, const i
   
   for(unsigned int i = firstHolePixelIndex; i <= lastHolePixelIndex; ++i)
     {
-    std::cout << "pixel " << i << " " << pixels[i] << std::endl;
+    //std::cout << "Changing pixel " << i << " " << pixels[i] << std::endl;
     if(!mask->IsHole(pixels[i]))
       {
       throw std::runtime_error("Something went wrong, we should only have hole pixels!");
       }
     image->SetPixel(pixels[i], value0 + i * step);
+    mask->SetPixel(pixels[i], mask->GetValidValue());
     }
 }
 
@@ -244,7 +254,7 @@ void InteroplateLineBetweenPoints(TImage* const image, const itk::Index<2>& p0, 
 
   for(unsigned int i = 0; i < pixels.size(); i++)
     {
-    std::cout << "pixel " << i << " " << pixels[i] << std::endl;
+    //std::cout << "pixel " << i << " " << pixels[i] << std::endl;
     image->SetPixel(pixels[i], value0 + i * step);
     }
 }

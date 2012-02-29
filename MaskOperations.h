@@ -77,7 +77,7 @@ template<typename TImage>
 void AddNoiseInHole(TImage* const image, const Mask* const mask, const float noiseVariance);
 
 template<typename TImage>
-void InteroplateThroughHole(TImage* const image, const Mask* const mask, const itk::Index<2>& p0, const itk::Index<2>& p1);
+void InteroplateThroughHole(TImage* const image, Mask* const mask, const itk::Index<2>& p0, const itk::Index<2>& p1);
 
 template<typename TImage>
 void InteroplateLineBetweenPoints(TImage* const image, const itk::Index<2>& p0, const itk::Index<2>& p1);
