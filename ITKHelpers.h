@@ -103,6 +103,9 @@ itk::ImageRegion<2> GetRegionInRadiusAroundPixel(const itk::Index<2>& pixel, con
 /** Get the offsets of the 8 neighborhood of a pixel. */
 std::vector<itk::Offset<2> > Get8NeighborOffsets();
 
+/** Get the indices of the 8 neighborhood of a pixel. */
+std::vector<itk::Index<2> > Get8NeighborIndices(const itk::Index<2>& index);
+
 /** Get the indices of the neighbors of a pixel that are inside of a region. */
 std::vector<itk::Index<2> > Get8NeighborsInRegion(const itk::ImageRegion<2>& region, const itk::Index<2>& pixel);
 

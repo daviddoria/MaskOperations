@@ -172,7 +172,7 @@ void AddNoiseInHole(TImage* const image, const Mask* const mask, const float noi
 }
 
 template<typename TImage>
-void InteroplateThroughHole(TImage* const image, Mask* const mask, const itk::Index<2>& p0, const itk::Index<2>& p1)
+void InteroplateThroughHole(TImage* const image, Mask* const mask, const itk::Index<2>& p0, const itk::Index<2>& p1, const unsigned int lineThickness)
 {
   // This function sets the pixels on the line in the mask to valid and sets the corresponding pixels in the image to the interpolated values.
   if(mask->IsHole(p0) || mask->IsHole(p1))
@@ -227,15 +227,28 @@ void InteroplateThroughHole(TImage* const image, Mask* const mask, const itk::In
   float difference = value1 - value0;
   float step = difference / static_cast<float>(lastHolePixelIndex - firstHolePixelIndex);
   
-  for(unsigned int i = firstHolePixelIndex; i <= lastHolePixelIndex; ++i)
+  for(unsigned int holePixelId = firstHolePixelIndex; holePixelId <= lastHolePixelIndex; ++holePixelId)
     {
     //std::cout << "Changing pixel " << i << " " << pixels[i] << std::endl;
-    if(!mask->IsHole(pixels[i]))
+//     if(!mask->IsHole(pixels[holePixelId]))
+//       {
+//       throw std::runtime_error("Something went wrong, we should only have hole pixels!");
+//       }
+    
+  // For a line thickness of 0
+     image->SetPixel(pixels[holePixelId], value0 + holePixelId * step);
+     mask->SetPixel(pixels[holePixelId], mask->GetValidValue());
+
+    // For a hacky thicker line
+    std::vector<itk::Index<2> > indices = ITKHelpers::Get8NeighborIndices(pixels[holePixelId]);
+    for(unsigned int neighborId = 0; neighborId < indices.size(); ++neighborId)
       {
-      throw std::runtime_error("Something went wrong, we should only have hole pixels!");
+      if(mask->IsHole(indices[neighborId]))
+        {
+        image->SetPixel(indices[neighborId], value0 + holePixelId * step);
+        mask->SetPixel(indices[neighborId], mask->GetValidValue());
+        }
       }
-    image->SetPixel(pixels[i], value0 + i * step);
-    mask->SetPixel(pixels[i], mask->GetValidValue());
     }
 }
 

@@ -351,6 +351,27 @@ std::vector<itk::Offset<2> > Get8NeighborOffsets()
   return offsets;
 }
 
+std::vector<itk::Index<2> > Get8NeighborIndices(const itk::Index<2>& index)
+{
+  std::vector<itk::Index<2> > indices;
+
+  for(int i = -1; i <= 1; ++i)
+    {
+    for(int j = -1; j <= 1; ++j)
+      {
+      if(i == 0 && j == 0)
+        {
+        continue;
+        }
+      itk::Offset<2> offset;
+      offset[0] = i;
+      offset[1] = j;
+      indices.push_back(index + offset);
+      }
+    }
+  return indices;
+}
+
 // itk::VariableLengthVector<float> Average(const std::vector<itk::VariableLengthVector<float> >& v)
 // {
 //   // std::cout << "ITKHelpers::Average" << std::endl;
