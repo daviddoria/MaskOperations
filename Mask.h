@@ -139,7 +139,7 @@ public:
 
   /** Recolor the hole pixels in 'image' a specified 'color'.*/
   template<typename TImage, typename TColor>
-  void ApplyColorToImage(const TImage* const image, const TColor& color) const;
+  void ApplyColorToImage(TImage* const image, const TColor& color) const;
 
   /** Change the hole pixels in 'image' to a specified 'holeValue'.*/
   template<typename TImage>
@@ -158,6 +158,9 @@ public:
 
   /** Determine if a pixel has at least 1 hole neighbor.*/
   bool HasHoleNeighbor(const itk::Index<2>& pixel) const;
+
+  /** Determine if a pixel has at least 1 valid neighbor.*/
+  bool HasValidNeighbor(const itk::Index<2>& pixel) const;
   
   /** Get a list of the hole neighbors of a pixel.*/
   std::vector<itk::Index<2> > GetHoleNeighbors(const itk::Index<2>& pixel) const;
@@ -173,6 +176,7 @@ public:
   
   /** Get a list of the hole pixels in a region.*/
   std::vector<itk::Index<2> > GetHolePixelsInRegion(itk::ImageRegion<2> region) const;
+  std::vector<itk::Index<2> > GetHolePixels() const;
 
   /** Get a list of the offsets of the valid pixels in a region.*/
   std::vector<itk::Offset<2> > GetValidOffsetsInRegion(itk::ImageRegion<2> region) const;
@@ -182,6 +186,12 @@ public:
   
   /** Count hole pixels in a region.*/
   unsigned int CountHolePixels(const itk::ImageRegion<2>& region) const;
+
+  /** Count hole pixels that are touching valid pixels.*/
+  unsigned int CountBoundaryPixels(const itk::ImageRegion<2>& region) const;
+
+  /** Count hole pixels that are touching valid pixels.*/
+  unsigned int CountBoundaryPixels() const;
   
   /** Count hole pixels in the whole mask.*/
   unsigned int CountHolePixels() const;

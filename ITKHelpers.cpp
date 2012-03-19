@@ -205,6 +205,23 @@ itk::ImageRegion<2> GetRegionInRadiusAroundPixel(const itk::Index<2>& pixel, con
   return region;
 }
 
+std::vector<itk::Index<2> > GetIndicesInRegion(const itk::ImageRegion<2>& region)
+{
+  std::vector<itk::Index<2> > indices;
+
+  typedef itk::Image<unsigned char, 2> DummyImageType;
+  DummyImageType::Pointer image = DummyImageType::New();
+  image->SetRegions(region);
+  image->Allocate();
+  
+  itk::ImageRegionConstIteratorWithIndex<DummyImageType> regionIterator(image, region);
+  while(!regionIterator.IsAtEnd())
+    {
+    indices.push_back(regionIterator.GetIndex());
+    ++regionIterator;
+    }
+  return indices;
+}
 
 itk::Index<2> GetRegionCenter(const itk::ImageRegion<2>& region)
 {

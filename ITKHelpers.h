@@ -52,6 +52,8 @@ unsigned int GetNumberOfComponentsPerPixelInFile(const std::string& filename);
 /** Get a short string of an itk::Index */
 std::string GetIndexString(const itk::Index<2>& index);
 
+std::vector<itk::Index<2> > GetIndicesInRegion(const itk::ImageRegion<2>& region);
+
 /** Get a short string of an itk::Size */
 std::string GetSizeString(const itk::Size<2>& size);
 

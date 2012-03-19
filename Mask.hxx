@@ -59,7 +59,7 @@ void Mask::ApplyToVectorImage(TImage* const image, const TColor& color) const
 }
 
 template<typename TImage, typename TColor>
-void Mask::ApplyColorToImage(const TImage* const image, const TColor& color) const
+void Mask::ApplyColorToImage(TImage* const image, const TColor& color) const
 {
   // Using generics, we allow any Color class that has .red(), .green(), and .blue() member functions
   // to be used to specify the color.

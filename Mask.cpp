@@ -64,9 +64,38 @@ void Mask::Read(const std::string& filename)
   DeepCopyFrom(imageReader->GetOutput());
 }
 
+unsigned int Mask::CountBoundaryPixels(const itk::ImageRegion<2>& region) const
+{
+  itk::ImageRegionConstIteratorWithIndex<Mask> maskIterator(this, region);
+  unsigned int numberOfBoundaryPixels = 0;
+  while(!maskIterator.IsAtEnd())
+    {
+    if(this->IsHole(maskIterator.GetIndex()))
+    {
+      if(this->HasValidNeighbor(maskIterator.GetIndex()))
+        {
+        numberOfBoundaryPixels++;
+        }
+    }
+
+    ++maskIterator;
+    }
+  return numberOfBoundaryPixels;
+}
+
+unsigned int Mask::CountBoundaryPixels() const
+{
+  return CountBoundaryPixels(this->GetLargestPossibleRegion());
+}
+  
 unsigned int Mask::CountHolePixels(const itk::ImageRegion<2>& region) const
 {
   return GetHolePixelsInRegion(region).size();
+}
+
+std::vector<itk::Index<2> > Mask::GetHolePixels() const
+{
+  return GetHolePixelsInRegion(this->GetLargestPossibleRegion());
 }
 
 unsigned int Mask::CountHolePixels() const
@@ -485,6 +514,15 @@ std::vector<itk::Index<2> > Mask::GetValidNeighbors(const itk::Index<2>& pixel) 
 bool Mask::HasHoleNeighbor(const itk::Index<2>& pixel) const
 {
   if(GetHoleNeighbors(pixel).size() > 0)
+    {
+    return true;
+    }
+  return false;
+}
+
+bool Mask::HasValidNeighbor(const itk::Index<2>& pixel) const
+{
+  if(GetValidNeighbors(pixel).size() > 0)
     {
     return true;
     }

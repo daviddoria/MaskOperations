@@ -35,6 +35,9 @@ itk::ImageRegion<2> RandomRegionInsideHole(const Mask* const mask, const unsigne
 /** Return a random region that is entirely valid. */
 itk::ImageRegion<2> RandomValidRegion(const Mask* const mask, const unsigned int halfWidth);
 
+/** Compute the bounding box of the mask. */
+itk::ImageRegion<2> ComputeBoundingBox(const Mask* const mask);
+
 template <class TImage>
 void CopySelfPatchIntoHoleOfTargetRegion(TImage* const image, const Mask* const mask,
                                          const itk::ImageRegion<2>& sourceRegionInput,
@@ -49,8 +52,10 @@ template<typename TImage>
 void CreatePatchImage(const TImage* const image, const itk::ImageRegion<2>& sourceRegion,
                       const itk::ImageRegion<2>& targetRegion, const Mask* const mask, TImage* const result);
 
+template<typename TImage>
+void AddConstantInHole(TImage* const image, const float value, const Mask* const maskImage);
 
-// Return the highest value of the specified image out of the pixels under a specified BoundaryImage.
+/** Return the highest value of the specified image out of the pixels under a specified BoundaryImage. */
 template<typename TImage>
 itk::Index<2> FindHighestValueInMaskedRegion(const TImage* const image, float& maxValue, const Mask* const maskImage);
 
@@ -76,11 +81,24 @@ std::vector<typename TImage::PixelType> GetValidPixelsInRegion(const TImage* con
 template<typename TImage>
 void AddNoiseInHole(TImage* const image, const Mask* const mask, const float noiseVariance);
 
+/** Interpolate values through a hole, filling only pixels that are in the hole. This function assumes one hole entry and one hole exit (i.e. the line between p0 and p1 only intersects the hole twice). */
 template<typename TImage>
 void InteroplateThroughHole(TImage* const image, Mask* const mask, const itk::Index<2>& p0, const itk::Index<2>& p1, const unsigned int lineThickness = 0);
 
 template<typename TImage>
 void InteroplateLineBetweenPoints(TImage* const image, const itk::Index<2>& p0, const itk::Index<2>& p1);
+
+/** Blur an image using all of its values but only replaced the pixel values with the blurred values inside the hole. */
+template<typename TImage>
+void BlurInHole(TImage* const image, const Mask* const mask, const float kernelVariance = 1.0f);
+
+/** Median filter an image using all of its values but only replaced the pixel values with the blurred values inside the hole. */
+template<typename TImage>
+void MedianFilterInHole(TImage* const image, const Mask* const mask, const unsigned int kernelRadius = 1);
+
+/** Clip the values in the image inside the hole. */
+template<typename TImage>
+void ClipInHole(TImage* const image, const Mask* const mask, const float min, const float max);
 
 } // end namespace
 

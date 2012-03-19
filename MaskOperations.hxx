@@ -7,10 +7,12 @@
 #include "ITKHelpers.h"
 
 // ITK
-#include "itkGaussianOperator.h"
-#include "itkLaplacianOperator.h"
-#include "itkImageRegionIterator.h"
 #include "itkBresenhamLine.h"
+#include "itkDiscreteGaussianImageFilter.h"
+#include "itkGaussianOperator.h"
+#include "itkImageRegionIterator.h"
+#include "itkLaplacianOperator.h"
+#include "itkMedianImageFilter.h"
 
 namespace MaskOperations
 {
@@ -183,6 +185,8 @@ void InteroplateThroughHole(TImage* const image, Mask* const mask, const itk::In
   itk::BresenhamLine<2> line;
 
   std::vector< itk::Index<2> > pixels = line.BuildLine(p0, p1);
+  std::cout << "Line contains " << pixels.size() << " pixels." << std::endl;
+  
   std::vector< itk::Index<2> > holePixels;
 
   // Find the start and end of the line
@@ -206,6 +210,8 @@ void InteroplateThroughHole(TImage* const image, Mask* const mask, const itk::In
       }
     }
 
+  std::cout << "First pixel in hole ID " << firstHolePixelIndex << std::endl;
+    
   typename TImage::PixelType value1;
   // Look for the last hole pixel, and set value1 to the one after it (the pixel on the valid side of the hole boundary)
   unsigned int lastHolePixelIndex = 0;
@@ -225,22 +231,32 @@ void InteroplateThroughHole(TImage* const image, Mask* const mask, const itk::In
     }
 
   float difference = value1 - value0;
-  float step = difference / static_cast<float>(lastHolePixelIndex - firstHolePixelIndex);
+
+  std::cout << "Last pixel in hole ID " << lastHolePixelIndex << std::endl;
+
+  unsigned int numberOfPixelsInHole = lastHolePixelIndex - firstHolePixelIndex;
+  float step = difference / static_cast<float>(numberOfPixelsInHole);
+  std::cout << "There are " << numberOfPixelsInHole << " pixels in the hole." << std::endl;
+  
+  if(lastHolePixelIndex - firstHolePixelIndex == 0)
+  {
+    throw std::runtime_error("Something is wrong, there are zero pixels to change!");
+  }
   
   for(unsigned int holePixelId = firstHolePixelIndex; holePixelId <= lastHolePixelIndex; ++holePixelId)
     {
-    //std::cout << "Changing pixel " << i << " " << pixels[i] << std::endl;
+    std::cout << "Changing pixel " << holePixelId << " " << pixels[holePixelId] << std::endl;
 //     if(!mask->IsHole(pixels[holePixelId]))
 //       {
 //       throw std::runtime_error("Something went wrong, we should only have hole pixels!");
 //       }
     
   // For a line thickness of 0
-     image->SetPixel(pixels[holePixelId], value0 + holePixelId * step);
-     mask->SetPixel(pixels[holePixelId], mask->GetValidValue());
+    image->SetPixel(pixels[holePixelId], value0 + holePixelId * step);
+    mask->SetPixel(pixels[holePixelId], mask->GetValidValue());
 
     // For a hacky thicker line
-    std::vector<itk::Index<2> > indices = ITKHelpers::Get8NeighborIndices(pixels[holePixelId]);
+    std::vector<itk::Index<2> > indices = ITKHelpers::GetIndicesInRegion(ITKHelpers::GetRegionInRadiusAroundPixel(pixels[holePixelId], lineThickness));
     for(unsigned int neighborId = 0; neighborId < indices.size(); ++neighborId)
       {
       if(mask->IsHole(indices[neighborId]))
@@ -269,6 +285,123 @@ void InteroplateLineBetweenPoints(TImage* const image, const itk::Index<2>& p0, 
     {
     //std::cout << "pixel " << i << " " << pixels[i] << std::endl;
     image->SetPixel(pixels[i], value0 + i * step);
+    }
+}
+
+
+template<typename TImage>
+void InteroplateLineBetweenPointsWithFilling(TImage* const image, Mask* const mask, const itk::Index<2>& p0, const itk::Index<2>& p1)
+{
+  itk::BresenhamLine<2> line;
+
+  std::vector< itk::Index<2> > pixels = line.BuildLine(p0, p1);
+
+  typename TImage::PixelType value0 = image->GetPixel(p0);
+  typename TImage::PixelType value1 = image->GetPixel(p1);
+
+  float difference = value1 - value0;
+  float step = difference / static_cast<float>(pixels.size());
+
+  for(unsigned int i = 0; i < pixels.size(); i++)
+    {
+    //std::cout << "pixel " << i << " " << pixels[i] << std::endl;
+    image->SetPixel(pixels[i], value0 + i * step);
+    mask->SetPixel(pixels[i], mask->GetValidValue());
+    }
+}
+
+template<typename TImage>
+void BlurInHole(TImage* const image, const Mask* const mask, const float kernelVariance)
+{
+  typedef itk::DiscreteGaussianImageFilter<TImage, TImage> DiscreteGaussianImageFilterType;
+
+  // Create and setup a Gaussian filter
+  typename DiscreteGaussianImageFilterType::Pointer gaussianFilter = DiscreteGaussianImageFilterType::New();
+  gaussianFilter->SetInput(image);
+
+  typename DiscreteGaussianImageFilterType::ArrayType varianceArray;
+  varianceArray.Fill(kernelVariance);
+  gaussianFilter->SetVariance(varianceArray);
+  gaussianFilter->Update();
+
+  itk::ImageRegionIteratorWithIndex<TImage> imageIterator(image, image->GetLargestPossibleRegion());
+
+  while(!imageIterator.IsAtEnd())
+    {
+    if(mask->IsHole(imageIterator.GetIndex()))
+      {
+      imageIterator.Set(gaussianFilter->GetOutput()->GetPixel(imageIterator.GetIndex()));
+      }
+
+    ++imageIterator;
+    }
+}
+
+template<typename TImage>
+void MedianFilterInHole(TImage* const image, const Mask* const mask, const unsigned int kernelRadius)
+{
+  std::cout << "Median filtering with radius " << kernelRadius << std::endl;
+  typedef itk::MedianImageFilter<TImage, TImage> MedianFilterType;
+  typename MedianFilterType::Pointer medianFilter = MedianFilterType::New();
+  typename MedianFilterType::InputSizeType radius;
+  radius.Fill(kernelRadius);
+  medianFilter->SetRadius(radius);
+  medianFilter->SetInput(image);
+  medianFilter->Update();
+
+  itk::ImageRegionIteratorWithIndex<TImage> imageIterator(image, image->GetLargestPossibleRegion());
+
+  while(!imageIterator.IsAtEnd())
+    {
+    if(mask->IsHole(imageIterator.GetIndex()))
+      {
+      std::cout << "Changing " << image->GetPixel(imageIterator.GetIndex()) << " to " << medianFilter->GetOutput()->GetPixel(imageIterator.GetIndex()) << std::endl;
+      imageIterator.Set(medianFilter->GetOutput()->GetPixel(imageIterator.GetIndex()));
+      }
+
+    ++imageIterator;
+    }
+}
+
+/** Clip the values in the image inside the hole. */
+template<typename TImage>
+void ClipInHole(TImage* const image, const Mask* const mask, const float min, const float max)
+{
+  itk::ImageRegionIteratorWithIndex<TImage> imageIterator(image, image->GetLargestPossibleRegion());
+
+  while(!imageIterator.IsAtEnd())
+    {
+    if(mask->IsHole(imageIterator.GetIndex()))
+      {
+      //std::cout << "Changing " << image->GetPixel(imageIterator.GetIndex()) << " to "
+      //          << medianFilter->GetOutput()->GetPixel(imageIterator.GetIndex()) << std::endl;
+      if(imageIterator.Get() < min)
+      {
+        imageIterator.Set(min);
+      }
+      if(imageIterator.Get() > max)
+      {
+        imageIterator.Set(max);
+      }
+      }
+
+    ++imageIterator;
+    }
+}
+
+template<typename TImage>
+void AddConstantInHole(TImage* const image, const float value, const Mask* const mask)
+{
+  itk::ImageRegionIteratorWithIndex<TImage> imageIterator(image, image->GetLargestPossibleRegion());
+
+  while(!imageIterator.IsAtEnd())
+    {
+    if(mask->IsHole(imageIterator.GetIndex()))
+      {
+      imageIterator.Set(value);
+      }
+
+    ++imageIterator;
     }
 }
 

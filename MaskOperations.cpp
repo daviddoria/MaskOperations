@@ -54,4 +54,40 @@ itk::ImageRegion<2> RandomValidRegion(const Mask* const mask, const unsigned int
   return randomRegion;
 }
 
+itk::ImageRegion<2> ComputeBoundingBox(const Mask* const mask)
+{
+  itk::ImageRegionConstIterator<Mask> imageIterator(mask, mask->GetLargestPossibleRegion());
+
+  itk::Index<2> min = {{mask->GetLargestPossibleRegion().GetSize()[0], mask->GetLargestPossibleRegion().GetSize()[1]}};
+  itk::Index<2> max = {{0, 0}};
+
+  while(!imageIterator.IsAtEnd())
+    {
+    if(imageIterator.Get())
+    {
+      if(imageIterator.GetIndex()[0] < min[0])
+      {
+        min[0] = imageIterator.GetIndex()[0];
+      }
+      if(imageIterator.GetIndex()[1] < min[1])
+      {
+        min[1] = imageIterator.GetIndex()[1];
+      }
+      if(imageIterator.GetIndex()[0] > max[0])
+      {
+        max[0] = imageIterator.GetIndex()[0];
+      }
+      if(imageIterator.GetIndex()[1] > max[1])
+      {
+        max[1] = imageIterator.GetIndex()[1];
+      }
+    }
+    ++imageIterator;
+    }
+
+  itk::Size<2> size = {{max[0] - min[0], max[1] - min[1]}};
+  itk::ImageRegion<2> region(min, size);
+  return region;
+}
+
 } // end namespace

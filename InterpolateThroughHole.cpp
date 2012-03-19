@@ -7,9 +7,9 @@
 
 int main(int argc, char*argv[])
 {
-  if(argc != 9)
+  if(argc != 10)
     {
-    std::cerr << "Required arguments: image mask p0x p0y p1x p1y outputImage outputMask" << std::endl;
+    std::cerr << "Required arguments: image mask p0x p0y p1x p1y lineThickness outputImage outputMask" << std::endl;
     return EXIT_FAILURE;
     }
 
@@ -17,13 +17,14 @@ int main(int argc, char*argv[])
   std::string maskFilename = argv[2];
 
   std::stringstream ssPoints;
-  ssPoints << argv[3] << " " << argv[4] << " " << argv[5] << " " << argv[6];
+  ssPoints << argv[3] << " " << argv[4] << " " << argv[5] << " " << argv[6] << " " << argv[7];
   itk::Index<2> p0;
   itk::Index<2> p1;
-  ssPoints >> p0[0] >> p0[1] >> p1[0] >> p1[1];
+  unsigned int lineThickness = 0;
+  ssPoints >> p0[0] >> p0[1] >> p1[0] >> p1[1] >> lineThickness;
 
-  std::string outputImageFileName = argv[7];
-  std::string outputMaskFileName = argv[8];
+  std::string outputImageFileName = argv[8];
+  std::string outputMaskFileName = argv[9];
 
   std::cout << "Reading image: " << imageFilename << std::endl;
   std::cout << "Reading mask: " << maskFilename << std::endl;
@@ -43,7 +44,8 @@ int main(int argc, char*argv[])
   Mask::Pointer mask = Mask::New();
   mask->Read(maskFilename.c_str());
 
-  MaskOperations::InteroplateThroughHole(imageReader->GetOutput(), mask.GetPointer(), p0, p1);
+  //MaskOperations::InteroplateThroughHole(imageReader->GetOutput(), mask.GetPointer(), p0, p1, lineThickness);
+  MaskOperations::InteroplateLineBetweenPointsWithFilling(imageReader->GetOutput(), mask.GetPointer(), p0, p1);
 
   OutputHelpers::WriteImage(imageReader->GetOutput(), outputImageFileName);
   OutputHelpers::WriteImage(mask.GetPointer(), outputMaskFileName);
