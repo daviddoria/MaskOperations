@@ -13,6 +13,9 @@ INCLUDE(${QT_USE_FILE})
 FIND_PACKAGE(ITK REQUIRED)
 INCLUDE(${ITK_USE_FILE})
 
+FIND_PACKAGE(VTK REQUIRED)
+INCLUDE(${VTK_USE_FILE})
+
 add_subdirectory(Mask)
 
 # add_executable(AddNoiseInMaskedRegion AddNoiseInMaskedRegion.cpp MaskOperations.cpp Mask.cpp OutputHelpers.cpp ITKHelpers.cpp Helpers.cpp)
@@ -22,11 +25,12 @@ add_subdirectory(Mask)
 # target_link_libraries(InterpolateThroughHole ${ITK_LIBRARIES})
 
 add_library(MaskedOperations Mask/Mask.cpp Mask/ITKHelpers/ITKHelpers.cpp Mask/Helpers/Helpers.cpp Mask/MaskOperations.cpp)
+target_link_libraries(MaskedOperations ${ITK_LIBRARIES} ${VTK_LIBRARIES})
 
 SET(MO_SetMaskedPixelsToValue CACHE BOOL "Compute the absolute value (pixel-wise) of an image")
 if(MO_SetMaskedPixelsToValue)
   ADD_EXECUTABLE(SetMaskedPixelsToValue SetMaskedPixelsToValue.cpp)
-  TARGET_LINK_LIBRARIES(SetMaskedPixelsToValue ${ITK_LIBRARIES} MaskedOperations)
+  TARGET_LINK_LIBRARIES(SetMaskedPixelsToValue MaskedOperations)
   INSTALL( TARGETS SetMaskedPixelsToValue RUNTIME DESTINATION ${INSTALL_DIR} )
 endif()
 
