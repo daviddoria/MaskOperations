@@ -1,6 +1,5 @@
-#include "MaskOperations.h"
-#include "Mask.h"
-#include "OutputHelpers.h"
+#include <Mask/MaskOperations.h>
+#include <Mask/Mask.h>
 
 // ITK
 #include "itkImageFileReader.h"
@@ -30,14 +29,11 @@ int main(int argc, char*argv[])
     ss >> values[i];
   }
 
-//   itk::RGBPixel<unsigned char> color;
-//   color.SetRed(values[0]);
-//   color.SetGreen(values[1]);
-//   color.SetBlue(values[2]);
-  Color color;
-  color.r = values[0];
-  color.g = values[1];
-  color.b = values[2];
+  typedef itk::Image<itk::CovariantVector<unsigned char, 3>, 2> ImageType;
+  ImageType::PixelType color;
+  color[0] = values[0];
+  color[1] = values[1];
+  color[2] = values[2];
 
   std::string imageFilename = argv[1];
   std::string maskFilename = argv[2];
@@ -48,22 +44,6 @@ int main(int argc, char*argv[])
   std::cout << "Output: " << outputFilename << std::endl;
   std::cout << "Color: " << static_cast<int>(values[0]) << " " << static_cast<int>(values[1]) << " " << static_cast<int>(values[2]) << std::endl;
 
-  //typedef itk::Image<float, 2> ImageType;
-
-  //typedef itk::Image<itk::CovariantVector<unsigned char, 3>, 2> ImageType;
-//   ImageType::PixelType color;
-//   color[0] = 0;
-//   color[1] = 255;
-//   color[2] = 0;
-
-  typedef itk::Image<itk::RGBPixel<unsigned char>, 2> ImageType;
-
-
-//   Color color;
-//   color.r = 0;
-//   color.g = 255;
-//   color.b = 0;
-  
   typedef itk::ImageFileReader<ImageType> ImageReaderType;
   ImageReaderType::Pointer imageReader = ImageReaderType::New();
   imageReader->SetFileName(imageFilename.c_str());
@@ -72,10 +52,9 @@ int main(int argc, char*argv[])
   Mask::Pointer mask = Mask::New();
   mask->Read(maskFilename.c_str());
 
+  mask->ApplyToImage(imageReader->GetOutput(), color);
 
-  mask->ApplyColorToImage(imageReader->GetOutput(), color);
-
-  OutputHelpers::WriteImage(imageReader->GetOutput(), outputFilename);
+  ITKHelpers::WriteImage(imageReader->GetOutput(), outputFilename);
 
   return EXIT_SUCCESS;
 }

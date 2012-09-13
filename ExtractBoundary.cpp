@@ -25,7 +25,8 @@ int main(int argc, char*argv[])
   boundaryImage->SetRegions(mask->GetLargestPossibleRegion());
   boundaryImage->Allocate();
   
-  mask->FindBoundary(boundaryImage.GetPointer());
+//  mask->CreateBoundaryImage(boundaryImage.GetPointer(), mask->GetValidValue());
+  mask->CreateBoundaryImage(boundaryImage.GetPointer(), Mask::VALID);
   
   ITKHelpers::WriteImage(boundaryImage.GetPointer(), outputFilename);
 
