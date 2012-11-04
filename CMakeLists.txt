@@ -4,7 +4,9 @@ SET(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 # This is needed for shared_ptr and the trick using enable_if and if_fundamental to allow scalars
 # to be treated as the 0th component of a vector.
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=gnu++0x")
+if(UNIX)
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=gnu++0x")
+endif(UNIX)
 
 SET( INSTALL_DIR ${CMAKE_INSTALL_PREFIX} )
 
@@ -17,10 +19,19 @@ INCLUDE(${ITK_USE_FILE})
 FIND_PACKAGE(VTK REQUIRED)
 INCLUDE(${VTK_USE_FILE})
 
-if(NOT TARGET Mask)
+# Only include Mask if it is not already available
+get_property(FoundMask GLOBAL PROPERTY MaskIncludeDirs SET)
+if(NOT FoundMask)
   add_subdirectory(Mask)
-  include_directories(${Mask_includes})
 endif()
+
+get_property(MaskIncludeDirs GLOBAL PROPERTY MaskIncludeDirs)
+set(MaskOperations_include_dirs ${MaskOperations_include_dirs} ${MaskIncludeDirs})
+get_property(MaskLibs GLOBAL PROPERTY MaskLibs)
+set(MaskOperations_libraries ${MaskOperations_libraries} ${MaskLibs})
+
+# Give the compiler all of the required include directories
+include_directories(${MaskOperations_include_dirs})
 
 # add_executable(AddNoiseInMaskedRegion AddNoiseInMaskedRegion.cpp MaskOperations.cpp)
 # target_link_libraries(AddNoiseInMaskedRegion ${ITK_LIBRARIES})
